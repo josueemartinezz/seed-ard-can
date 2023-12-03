@@ -35,9 +35,11 @@ mcp2518fd CAN(SPI_CS_PIN); // Set CS pin
 #include "mcp2515_can.h"
 mcp2515_can CAN(SPI_CS_PIN); // Set CS pin
 #endif
+#define sensorPin A0
 
 void setup() {
-    SERIAL_PORT_MONITOR.begin(115200);
+  Serial.begin(9600);
+    SERIAL_PORT_MONITOR.begin(9600);
     while(!Serial){};
 
     while (CAN_OK != CAN.begin(CAN_500KBPS)) {             // init can bus : baudrate = 500k
@@ -47,23 +49,30 @@ void setup() {
     SERIAL_PORT_MONITOR.println("CAN init ok!");
 }
 
-unsigned char stmp[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+unsigned char stmp[8] = {0x97, 0x97, 0x97, 0x97, 0x97, 0x97, 0x97, 0x97};
 void loop() {
-    // send data:  id = 0x00, standrad frame, data len = 8, stmp: data buf
-    stmp[7] = stmp[7] + 1;
-    if (stmp[7] == 100) {
-        stmp[7] = 0;
-        stmp[6] = stmp[6] + 1;
+//     send data:  id = 0x00, standrad frame, data len = 8, stmp: data buf
+//    stmp[7] = stmp[7] + 1;
+//    if (stmp[7] == 100) {
+//        stmp[7] = 0;
+//        stmp[6] = stmp[6] + 1;
 
-        if (stmp[6] == 100) {
-            stmp[6] = 0;
-            stmp[5] = stmp[5] + 1;
-        }
-    }
+//        if (stmp[6] == 100) {
+//            stmp[6] = 0;
+//            stmp[5] = stmp[5] + 1;
+//        }
+// }
+int reading = analogRead(sensorPin);
 
+float voltage = reading * (5000/1024.0);
+
+float temperature = (voltage - 500) / 10;
+    
+stmp[0] = temperature;
     CAN.sendMsgBuf(0x00, 0, 8, stmp);
     delay(100);                       // send data per 100ms
     SERIAL_PORT_MONITOR.println("CAN BUS sendMsgBuf ok!");
+    SERIAL_PORT_MONITOR.println(temperature);
 }
 
 // END FILE
